@@ -208,7 +208,13 @@ their number of inhabitants:
 
 \begin{code}
 data Zero : Set where                  -- no constructors!
-record One : Set where constructor it  -- no fields!
+
+record One : Set where
+  constructor it  -- no fields!
+
+instance
+  One-instance : One
+  One-instance = it
 \end{code}
 
 Dependent types allow us to compute sets from data. E.g., we can
@@ -264,7 +270,7 @@ P => T = {{p : P}} -> T
 infixr 3 _=>_
 
 _:-_ : forall {P T} -> <P P P> -> (P => T) -> T
-! :- t = t
+! {{prf = p}} :- t = t {{p = p}}
 \end{code}
 
 This apparatus can give the traditional conditional a subtly more
@@ -314,8 +320,8 @@ data Nat : Set where
 
 \begin{code}
 {-# BUILTIN NATURAL Nat #-}
-{-# BUILTIN ZERO ze #-}
-{-# BUILTIN SUC su #-}
+-- {-# BUILTIN ZERO ze #-}
+-- {-# BUILTIN SUC su #-}
 
 postulate BROWN : {X Y : Set} -> X -> Y
 postulate LIE : (P : Set){X : Set} -> (P => X) -> X
@@ -699,6 +705,9 @@ data _+_ (S T : Set) :  Set where
   inl : S -> S + T ;    inr : T -> S + T
 infixr 4 _+_
 
+data Named {P : Set} (A : REL P) : REL P where
+  named : forall {x} -> A x -> Named A x
+
 OWOTO : forall {P}(L : REL P) -> REL P
 OWOTO L (x / y) = <P L (x / y) P> + <P L (y / x) P>
 
@@ -807,7 +816,7 @@ infixr 5 _\\_\\_
 Immediately, we can define an \emph{interval} to be the type of
 an element proven to lie within given bounds.
 \begin{code}
-<$_$>II : forall {P}(L : REL P) -> REL <$ P $>D
+<$_$>II : forall {P}(L' : REL P) (let L = Named L') -> REL <$ P $>D
 <$ L $>II = <^ L ^>P ^ <^ L ^>P
 pattern <$_$>ii p = ! \\ p \\ !
 \end{code}
@@ -1290,7 +1299,7 @@ immediate neighbours.
 %if False
 \begin{code}
 module BinarySearchTreeGen
-  {P : Set}(L : REL P)(owoto : forall x y -> OWOTO L (x / y)) where
+  {P : Set}(L' : REL P) (let L = Named L')(owoto : forall x y -> OWOTO L (x / y)) where
 \end{code}
 %endif
 
@@ -1299,7 +1308,7 @@ Hence we can rebuild our binary search tree insertion for an element
 in the corresponding interval:
 \begin{code}
   insert2 : [ <$ L $>I >> <$ L $>T >> <$ L $>T ]
-  insert2 <$ y $>ic leaf            = node leaf y leaf
+  insert2 <$ y $>ic leaf            = node leaf y leaf -- node leaf y leaf
   insert2 <$ y $>ic (node lt p rt)  with owoto y p
   ... | le  = node (insert2 <$ y $>ic lt) p rt
   ... | ge  = node lt p (insert2 <$ y $>ic rt)
@@ -1544,7 +1553,7 @@ flapp q1        (!               \\ p \\ ys)  = p // ys
 flapp (S q+ T)  (inl s           \\ p \\ ys)  = flapp S (s \\ p \\ ys)
 flapp (S q+ T)  (inr t           \\ p \\ ys)  = flapp T (t \\ p \\ ys)
 flapp (S q^ T)  ((s \\ p' \\ t)  \\ p \\ ys)
-  = flapp S (s \\ p' \\ flapp T (t \\ p \\ ys))
+  = {!!} -- flapp S (s \\ p' \\ flapp T (t \\ p \\ ys))
 \end{code}
 To finish the job, we need to work our way down the right spine of the
 input in search of its rightmost element, which initialises |p|.
@@ -1832,7 +1841,7 @@ Indeed, we need this extra wiggle room immediately for the base case!
 %if False
 \begin{code}
 module Tree23
-  {P : Set}(L : REL P)(owoto : forall x y -> OWOTO L (x / y)) where
+  {P : Set}(L' : REL P) (let L = Named L')(owoto : forall x y -> OWOTO L (x / y)) where
 \end{code}
 %endif
 %format ins23 = "\F{ins23}"
